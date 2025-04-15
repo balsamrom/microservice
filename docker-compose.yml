@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+
+  eureka:
+    build:
+      context: ./eureka
+    image: dhia/eureka:1.0
+    container_name: eureka
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_APPLICATION_NAME=eureka
+      - SERVER_PORT=8761
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+    networks:
+      - app-network
+
+  gateway:
+    build:
+      context: ./Gateway
+    image: dhia/gateway:1.0
+    container_name: api-gateway
+    ports:
+      - "8089:8089"
+    depends_on:
+      - eureka
+    environment:
+      - SPRING_APPLICATION_NAME=GATEWAY
+      - SERVER_PORT=8089
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - SPRING_CLOUD_DISCOVERY_ENABLED=true
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_ID=PI_micro
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_URI=lb://Pi-micro
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0=Path=/api/offres/**
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_FILTERS_0=AddRequestHeader=X-Request-Foo, Bar
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_FILTERS_1=AddResponseHeader=X-Response-Foo, Baz
+    networks:
+      - app-network
+
+  pi_micro:
+    build:
+      context: ./PI_micro
+    image: dhia/pimicro:1.0
+    container_name: pimicro
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka
+    environment:
+      - SPRING_APPLICATION_NAME=Pi-micro
+      - SERVER_PORT=8080
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/testdb
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=dhi
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=create
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.H2Dialect
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - SPRING_H2_CONSOLE_ENABLED=true
+      - SPRING_H2_CONSOLE_PATH=/h2
+      - SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS=true
+      - SPRING_CLOUD_CONFIG_IMPORT_CHECK_ENABLED=false
+      - SPRING_CLOUD_CONFIG_FAIL_FAST=true
+    volumes:
+      - ./PI_micro/data:/app/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
