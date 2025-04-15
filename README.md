@@ -39,11 +39,6 @@ Avant de commencer, assurez-vous d'avoir installé les outils suivants sur votre
 - **Java JDK 11+** : Pour exécuter le backend Spring Boot.
 - **MySQL** : Assurez-vous d'avoir un serveur MySQL en cours d'exécution.
 
-## Installation
 
-### 1. Clonez le repository
-Clonez le repository sur votre machine locale :
 
-```bash
-git clone https://github.com/votre-utilisateur/nom-du-projet.git
-cd nom-du-projet
+
