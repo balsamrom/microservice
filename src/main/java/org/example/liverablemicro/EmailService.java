@@ -2,41 +2,55 @@ package org.example.liverablemicro;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
 
 import java.io.File;
 
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final JavaMailSender javaMailSender;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    public EmailService(JavaMailSender javaMailSender) {
+        this.javaMailSender = javaMailSender;
     }
-    public void sendEmailWithAttachment(String to, String subject, String text, File attachment) {
+
+    // Méthode d'envoi d'un e-mail simple
+    public void sendEmail(String to, String subject, String body) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(text);
-            helper.addAttachment(attachment.getName(), attachment);
-
-            mailSender.send(message);
-        } catch (MessagingException e) {
-            e.printStackTrace();
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+            javaMailSender.send(message);
+        } catch (MailException e) {
+            e.printStackTrace();  // Loggez l'erreur si nécessaire
         }
     }
-    public void sendEmail(String to, String subject, String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
-        mailSender.send(message);
+
+    // Méthode d'envoi d'un e-mail avec un attachement (si nécessaire)
+    public void sendEmailWithAttachment(String to, String subject, String body, String attachmentPath) {
+        try {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body);
+
+            // Ajouter un fichier en pièce jointe
+            FileSystemResource file = new FileSystemResource(new File(attachmentPath));
+            helper.addAttachment("attachment.pdf", file);
+
+            javaMailSender.send(message);
+        } catch (MailException e) {
+            e.printStackTrace();  // Loggez l'erreur si nécessaire
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
